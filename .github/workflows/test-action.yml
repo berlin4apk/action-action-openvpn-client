@@ -16,6 +16,11 @@ env:
   PASSWORD: "dummyPW"
   CCACHEDIR: "~/.ccache"
 
+defaults:
+  run:
+    shell: bash -xv {0}
+    #shell: bash -eo pipefail {0}
+
 jobs:
   # Label of the container job
   container-job:
@@ -68,7 +73,15 @@ jobs:
 
       - name: shell-test
         run: |
-          set -vx; cat /etc/os-release; mkdir -p $CCACHE_DIR; command -v /usr/bin/env; command -v python3; command -v ccache-upload-redis; command -v bash; command -v sh; command -v python; command -v python2; ||:
+          set -vx
+          cat /etc/os-release
+          mkdir -p $CCACHE_DIR
+          command -v /usr/bin/env
+          command -v python3
+          command -v ccache-upload-redis
+          command -v bash; command -v sh
+          command -v python
+          command -v python2
         env:
           REDIS_CONF: localhost:${{ job.services.redis.ports['6379'] }}
           CCACHE_DIR: ~/.cache/ccache
