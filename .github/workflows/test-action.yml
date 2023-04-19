@@ -56,14 +56,14 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      - upload-test: "upload-test"
+      - name: "upload-test"
         run: |
           ccache-upload-redis
         env: |
           REDIS_CONF='localhost:${{ job.services.redis.ports['6379'] }}'
           CCACHE_DIR='~/.cache/ccache'
           
-      - download-test: "download-test"
+      - name: "download-test"
         run: |
           ccache-download-redis
         env: |
