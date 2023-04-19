@@ -1,61 +1,83 @@
-# Connect to OpenVPN SSL Server GitHub Action
+# ccache-upload-redis / ccache-download-redis GitHub Action
 
-An GitHub Action for connecting to an OpenVPN SSL Server.
-Only works on ubuntu runner.
+An GitHub Action for using ccache-upload-redis / ccache-download-redis
+to uploads / downloads the contents of the local ccache cache from a Redis remote storage.
 
 ## Usage
 
-- Save your `.ovpn` config to  `.github/vpn/config.ovpn`
-- Replace `remote your-vpn-server.example 443` with `remote AUTO_REPLACED_HOST AUTO_REPLACED_PORT`
-- Replace `<ca>` with `ca ca.crt` and repeat for every cert or key
-  - `ca` -> `ca.crt`
-  - `cert` -> `cert.cer`
-  - `cert key` -> `cert.key`
-- Create all the secrets you need (also save certs as secrets)
-- Required options
-  - username
-  - password
+- 
+- 
+
 
 ```yaml
-name: Test VPN
-
+name: Test ccache-download-upload-redis
 on:
   workflow_dispatch:
-
-env:
-  VPN_DNS_SERVER: 192.168.1.1
-
 jobs:
-  test:
+  # Label of the container job
+  container-job:
+    # Containers must run in Linux based operating systems
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
+    # Service containers to run with `container-job`
+    services:
+      # Label used to access the service container
+      redis:
+        # Docker Hub image
+        image: redis:7.0.10-alpine3.17
+        # Set health checks to wait until redis has started
+        options: >-
+          --interactive
+          --hostname redis
+          --add-host=host.docker.internal:host-gateway
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+          --restart always
+        ports:
+          - 6379/tcp
+          # get the rendom port via ${{ job.services.redis.ports['6379'] }}
+          # https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions#jobsjob_idservices
+          # https://docs.github.com/en/actions/learn-github-actions/contexts#job-context
+          # Maps port 6379 on service container to the host
+          #- 6379:6379
 
     steps:
+      - name: "Set some redis settings"
+        run: |
+          docker network ls
+          docker network ls --format='{{.ID }} {{.Name}}'
+          docker inspect ${{ job.services.redis.id }}
+          docker exec ${{ job.services.redis.id }} /bin/sh -c 'echo "cat /etc/redis/redis.conf ||:" '
+          docker exec ${{ job.services.redis.id }} /bin/sh -x -c 'mkdir -p /etc/redis ||: '
+          docker exec ${{ job.services.redis.id }} /bin/sh -x -c 'echo "save 60 100" >> /etc/redis/redis.conf'
+          docker exec ${{ job.services.redis.id }} /bin/sh -x -c 'echo "loglevel verbose" >> /etc/redis/redis.conf'
+          docker exec ${{ job.services.redis.id }} /bin/sh -x -c 'echo "# see https://github.community/t/how-do-i-properly-override-a-service-entrypoint/17435/8" >> /etc/redis/redis.conf'
+          docker exec ${{ job.services.redis.id }} /bin/sh -x -c 'echo "# https://hub.docker.com/_/redis" >> /etc/redis/redis.conf'
+          docker kill --signal=SIGHUP ${{ job.services.redis-y9g98g58d.id }} ||:
+
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      - name: Connect VPN
+      - upload-test: "upload-test"
+        run: |
+          ccache-upload-redis
+        env: |
+          REDIS_CONF='localhost:${{ job.services.redis.ports['6379'] }}'
+          CCACHE_DIR='~/.cache/ccache'
+          
+      - download-test: "download-test"
+        run: |
+          ccache-download-redis
+        env: |
+          REDIS_CONF='localhost:${{ job.services.redis.ports['6379'] }}'
+          CCACHE_DIR='~/.cache/ccache'
+
+      - name: Connect REDIS
         uses: ./
         with:
-          host: ${{ secrets.VPN_HOST }}
-          port: ${{ secrets.VPN_PORT }} #optional
-          username: ${{ secrets.VPN_USERNAME }}
-          password: ${{ secrets.VPN_PASSWORD }}
-          otp-hex: ${{ secrets.VPN_OTP }} #optional
-          otp-timezone: 'Europe/Zurich' #optional
-          dns-server: ${{ env.VPN_DNS_SERVER }} #optional
-          ovpn-config: ${{ env.VPN_CONFIG}} #optional (default is .github/vpn/config.ovpn)
-          ca: ${{ secrets.VPN_CA_CRT }} #optional
-          cert: ${{ secrets.VPN_CERT_CRT }} #optional
-          cert-key: ${{ secrets.VPN_CERT_KEY }} #optional
-          test-ping-ip-host: ${{ env.VPN_DNS_SERVER }} #optional
-          test-dns-host: google.ch #optional
-          logs: true #optional
+          host: ${{ variable.REDIS_SERVER }}
+          username: ${{ variable.USERNAME }}
+          password: ${{ variable.PASSWORD }}
+          ccachedir: ${{ variable.CCACHEDIR }}
 
-      - name: Test Ping
-        run: ping ${{ env.VPN_DNS_SERVER }} -c5
-        
-      - name: Test DNS
-        run: dig google.ch
-```
