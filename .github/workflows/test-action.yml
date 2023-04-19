@@ -63,15 +63,15 @@ jobs:
         run: |
           ccache-upload-redis
         env: |
-          REDIS_CONF='localhost:${{ job.services.redis.ports['6379'] }}'
-          CCACHE_DIR='~/.cache/ccache'
+          REDIS_CONF="localhost:${{ job.services.redis.ports['6379'] }}"
+          CCACHE_DIR="~/.cache/ccache'
           
       - name: "download-test"
         run: |
           ccache-download-redis
         env: |
-          REDIS_CONF='localhost:${{ job.services.redis.ports['6379'] }}'
-          CCACHE_DIR='~/.cache/ccache'
+          REDIS_CONF="localhost:${{ job.services.redis.ports['6379'] }}"
+          CCACHE_DIR="~/.cache/ccache"
 
       - name: Connect REDIS
         uses: ./
