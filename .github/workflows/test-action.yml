@@ -26,6 +26,9 @@ jobs:
   container-job:
     # Containers must run in Linux based operating systems
     runs-on: ubuntu-latest
+    continue-on-error: ${{ matrix.experimental }}
+    strategy:
+      fail-fast: false
     # Service containers to run with `container-job`
     services:
       # Label used to access the service container
@@ -81,6 +84,7 @@ jobs:
           command -v ccache-upload-redis
           command -v bash; command -v sh
           command -v python
+          command -v python3
           command -v python2
         env:
           REDIS_CONF: localhost:${{ job.services.redis.ports['6379'] }}
