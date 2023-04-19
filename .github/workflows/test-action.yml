@@ -2,6 +2,13 @@ name: Test ccache-download-upload-redis
 
 on:
   workflow_dispatch:
+  push:
+#    branches:
+#      - main
+  pull_request:
+
+permissions:
+  contents: read
 
 env:
   REDIS_SERVER: "172.17.0.1"
