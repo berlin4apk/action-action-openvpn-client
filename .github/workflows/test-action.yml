@@ -59,16 +59,23 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
 
+      - name: shell-test
+        run: |
+          set -vx; cat /etc/os-release; mkdir -p $CCACHE_DIR; command -v /usr/bin/env; command -v python3; command -v ccache-upload-redis; command -v bash; command -v sh; command -v python; command -v python2; ||:
+        env:
+          REDIS_CONF: localhost:${{ job.services.redis.ports['6379'] }}
+          CCACHE_DIR: ~/.cache/ccache
+
       - name: "upload-test"
         run: |
-          ccache-upload-redis
+          set -vx; ccache-upload-redis
         env:
           REDIS_CONF: localhost:${{ job.services.redis.ports['6379'] }}
           CCACHE_DIR: ~/.cache/ccache
           
       - name: "download-test"
         run: |
-          ccache-download-redis
+          set -vx; ccache-download-redis
         env:
           REDIS_CONF: localhost:${{ job.services.redis.ports['6379'] }}
           CCACHE_DIR: ~/.cache/ccache
