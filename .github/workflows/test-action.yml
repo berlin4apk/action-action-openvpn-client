@@ -4,7 +4,10 @@ on:
   workflow_dispatch:
 
 env:
-  REDIS_SERVER: 192.168.1.1
+  REDIS_SERVER: "172.17.0.1"
+  USERNAME: "dummyUSER"
+  PASSWORD: "dummyPW"
+  CCACHEDIR: "~/.ccache"
 
 jobs:
   # Label of the container job
@@ -73,8 +76,8 @@ jobs:
       - name: Connect REDIS
         uses: ./
         with:
-          host: ${{ variable.REDIS_SERVER }}
-          username: ${{ variable.USERNAME }}
-          password: ${{ variable.PASSWORD }}
-          ccachedir: ${{ variable.CCACHEDIR }}
+          host: ${{ env.REDIS_SERVER }}
+          username: ${{ env.USERNAME }}
+          password: ${{ env.PASSWORD }}
+          ccachedir: ${{ env.CCACHEDIR }}
 
